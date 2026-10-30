@@ -1,0 +1,30 @@
+/* Lettrine Dark — the default dark theme: lettrine.css with a dark palette.
+   Original to Lettrine and MIT licensed with it. */
+@import url("lettrine.css");
+
+.md-alert-note { --alert-color: #6cb0ff; }
+.md-alert-tip { --alert-color: #56d381; }
+.md-alert-important { --alert-color: #bc9bff; }
+.md-alert-warning { --alert-color: #e3b341; }
+.md-alert-caution { --alert-color: #ff8080; }
+
+:root {
+  --bg-color: #1c1d20;
+  --text-color: #d7d9dd;
+  --side-bar-bg-color: #232428;
+  --select-text-bg-color: #36557d;
+  --primary-color: #6cb0ff;
+
+  --doc-heading: #f1f2f4;
+  --doc-muted: #979ca5;
+  --doc-faint: #6e737c;
+  --doc-rule: #34363b;
+  --doc-quote: #3c3f45;
+  --doc-fill: #25272b;
+  --doc-code: rgba(255, 255, 255, .085);
+  --doc-link-line: rgba(108, 176, 255, .4);
+  --doc-mark: rgba(255, 184, 46, .3);
+  --doc-check: #5f646d;
+  --doc-check-hover: #868b94;
+  --doc-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-4.9' fill='none' stroke='%2312263f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}

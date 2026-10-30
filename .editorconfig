@@ -1,0 +1,21 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.swift]
+indent_size = 4
+
+# Two trailing spaces are a Markdown line break.
+[*.md]
+trim_trailing_whitespace = false
+
+# Upstream license texts are kept exactly as published.
+[licenses/*.txt]
+end_of_line = unset
+trim_trailing_whitespace = unset

@@ -1,0 +1,154 @@
+/* Lettrine — the default document theme (light).
+
+   lettrine-dark.css imports this file and changes only the palette, so both
+   appearances share one typeface, scale and rhythm. Original to Lettrine and
+   MIT licensed with it; it uses the system's fonts and bundles none.
+
+   Sizes are in rem so Settings → Font Size scales the whole document;
+   Settings also set the line height and page width on #write. */
+
+:root {
+  /* tokens read by base.css, editor.css and the application chrome */
+  --bg-color: #ffffff;
+  --text-color: #26282c;
+  --side-bar-bg-color: #f7f7f8;
+  --select-text-bg-color: #b8d6fb;
+  --primary-color: #0b63ce;
+  --rawblock-edit-panel-bd: var(--doc-fill);
+
+  /* this theme's palette; lettrine-dark.css redefines every color */
+  --doc-heading: #141518;
+  --doc-muted: #676c75;
+  --doc-faint: #a0a5ad;
+  --doc-rule: #e2e4e8;
+  --doc-quote: #d9dce1;
+  --doc-fill: #f5f6f8;
+  --doc-code: rgba(30, 36, 48, .065);
+  --doc-link-line: rgba(11, 99, 206, .35);
+  --doc-mark: #fdeea0;
+  --doc-check: #b4b9c1;
+  --doc-check-hover: #8d939c;
+  --doc-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-4.9' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  --doc-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+html { font-size: 16px; }
+body { font-family: var(--doc-font); color: var(--text-color); }
+#write { color: var(--text-color); }
+
+/* ============================ rhythm ============================ */
+/* Blocks space themselves below; headings add room above. Margins collapse,
+   so the gap under a heading stays smaller than the gap between paragraphs. */
+#write p,
+#write ul,
+#write ol,
+#write blockquote,
+#write table,
+#write figure,
+#write pre.md-fences,
+#write.md-export pre,
+#write .md-math-block { margin: 0 0 .85rem; }
+#write > :first-child { margin-top: 0; }
+
+/* ============================ headings ============================ */
+#write :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--doc-heading);
+  font-weight: 650;
+  line-height: 1.3;
+  margin: 1.6rem 0 .5rem;
+}
+#write h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-top: 2rem; }
+#write h2 { font-size: 1.5rem; line-height: 1.25; margin-top: 1.85rem; }
+#write h3 { font-size: 1.25rem; }
+#write h4 { font-size: 1.0625rem; }
+#write h5 { font-size: 1rem; }
+#write h6 { font-size: .9375rem; color: var(--doc-muted); }
+
+/* ============================ inline ============================ */
+#write strong, #write b { font-weight: 650; }
+#write a {
+  color: var(--primary-color);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--doc-link-line);
+  text-underline-offset: .2em;
+}
+#write a:hover { text-decoration-color: currentColor; }
+#write mark { background: var(--doc-mark); color: inherit; border-radius: 3px; padding: 0 .1em; }
+#write s { color: var(--doc-muted); }
+#write code {
+  font-size: .875em;
+  padding: .12em .36em;
+  border-radius: 4px;
+  background: var(--doc-code);
+}
+#write sup.md-footnote { padding: 0 .15em; background: transparent; color: var(--primary-color); font-weight: 600; }
+
+/* ============================ lists ============================ */
+#write :is(ul, ol) { padding-left: 1.6em; }
+#write li { margin: .2em 0; }
+#write li > :is(ul, ol) { margin: .2em 0 0; }
+#write li::marker { color: var(--doc-faint); }
+#write ol > li::marker { font-variant-numeric: tabular-nums; }
+
+/* tasks: a drawn box in the bullet's place, filled with the accent when done */
+#write .md-task-list-item > input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1em;
+  height: 1em;
+  /* centered on the first line, whatever the line height */
+  line-height: inherit;
+  margin: .3em 0 0 -1.45em;
+  margin-top: calc((1lh - 1em) / 2);
+  border: 1.5px solid var(--doc-check);
+  border-radius: 4px;
+  background: transparent center / .72em no-repeat;
+  cursor: pointer;
+  transition: background-color .12s, border-color .12s;
+}
+#write .md-task-list-item > input[type="checkbox"]:hover { border-color: var(--doc-check-hover); }
+#write .md-task-list-item > input[type="checkbox"]:checked {
+  border-color: var(--primary-color);
+  background-color: var(--primary-color);
+  background-image: var(--doc-check-mark);
+}
+#write .md-task-list-item > input[type="checkbox"]:focus-visible { outline: 2px solid var(--doc-link-line); outline-offset: 1px; }
+#write .md-task-list-item:has(> input:checked) > .md-plain { color: var(--doc-muted); }
+
+/* ============================ quotes ============================ */
+#write blockquote {
+  padding: 0 0 0 1em;
+  border-left: 3px solid var(--doc-quote);
+  color: var(--doc-muted);
+}
+#write blockquote > :last-child { margin-bottom: 0; }
+
+/* ============================ code ============================ */
+/* Editor fences, and plain pre/code in exported HTML. (CodeMirror's own
+   lines are pre elements too, so a bare `#write pre` would reach them.) */
+#write pre.md-fences,
+#write.md-export pre {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--doc-fill);
+  font-size: .875rem;
+  line-height: 1.55;
+}
+#write.md-export pre { padding: 12px 16px; overflow-x: auto; }
+#write.md-export pre code { padding: 0; border-radius: 0; background: transparent; font-size: inherit; }
+
+/* ============================ tables ============================ */
+#write table { font-size: .9375rem; }
+#write :is(th, td) { padding: .45em .8em; border: 1px solid var(--doc-rule); }
+#write th { font-weight: 600; background: var(--doc-fill); }
+
+/* ============================ media and notes ============================ */
+#write img { border-radius: 4px; }
+#write .footnotes { color: var(--doc-muted); }
+
+@media print {
+  #write pre.md-fences, #write th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

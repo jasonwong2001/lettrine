@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Lettrine app icon for 16 and 32 px: the same drop cap, larger, with
+       fewer and heavier lines so it stays legible. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EEF0F3"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#paper)"/>
+  <rect x="104" y="104" width="816" height="816" rx="181" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="8"/>
+  <g transform="translate(100 100)">
+    <path transform="translate(-30 -10) scale(1.32)" fill="#0B63CE" d="M118,140 H316 V166 C278,168 262,184 260,212 V482 H408 C434,482 450,456 456,398 H470 V520 H118 V494 C152,492 170,478 172,446 V212 C170,184 154,168 118,166 Z"/>
+    <rect x="600" y="170" width="112" height="64" rx="32" fill="#B9C0CA"/>
+    <rect x="600" y="310" width="112" height="64" rx="32" fill="#B9C0CA"/>
+    <rect x="600" y="450" width="72" height="64" rx="32" fill="#B9C0CA"/>
+  </g>
+</svg>

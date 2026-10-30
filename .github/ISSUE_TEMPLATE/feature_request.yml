@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement to Lettrine.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Lettrine is a small native Mac app that never rewrites Markdown you didn't edit.
+        Please check existing issues before submitting a request.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what you were trying to do and where Lettrine got in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should Lettrine do? If it's about syntax, include the Markdown involved.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Current workarounds, or how other editors handle it.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Optional sketches or examples, without private information.

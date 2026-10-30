@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test and build
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Show toolchain versions
+        run: |
+          node --version
+          xcrun swiftc --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit and DOM tests
+        run: npm test
+
+      # The native scenarios need an interactive desktop, so they run locally (see CONTRIBUTING.md).
+      - name: Build a release snapshot for Apple silicon and Intel
+        env:
+          LETTRINE_RELEASES_URL: https://github.com/${{ github.repository }}/releases
+        run: npm run release:snapshot
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v7
+        with:
+          name: Lettrine-${{ github.run_number }}
+          path: |
+            dist/Lettrine-*.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14

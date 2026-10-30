@@ -1,0 +1,72 @@
+name: Bug report
+description: Report something in Lettrine that doesn't work as it should.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report security vulnerabilities privately, as SECURITY.md explains, not in an issue.
+        Please remove anything personal from documents, paths and screenshots before attaching them.
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Include whether the Mac has Apple silicon or an Intel processor.
+      placeholder: "macOS 26.3, Apple silicon"
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Lettrine version
+      description: The version is in Lettrine › About Lettrine. If you built Lettrine yourself, add the commit.
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Editing the formatted document
+        - Source Code Mode
+        - Math, code or diagrams
+        - Sidebar, folders or files
+        - Export or import
+        - Settings, themes or the rest of the interface
+        - Somewhere else
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a document containing ...
+        2. Put the caret ...
+        3. Type ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: If the document looks wrong, check Source Code Mode (⌘/) and say whether the Markdown itself changed.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Markdown that shows the problem
+      description: Optional, but the smallest document that reproduces it helps most. Attach it, or paste it inside a code block so it shows exactly.
+  - type: textarea
+    id: context
+    attributes:
+      label: Screenshots or other context
+      description: Optional. Include only what you're comfortable making public.

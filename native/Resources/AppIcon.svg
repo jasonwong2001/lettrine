@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Lettrine app icon: a drop cap opening a page. macOS icon grid: an
+       824 px body centred on a 1024 px canvas, with the standard shadow.
+       The L is drawn for this icon; no typeface is embedded. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EEF0F3"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#paper)"/>
+  </g>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="183.5" fill="none" stroke="#000000" stroke-opacity="0.08" stroke-width="3"/>
+  <g transform="translate(100 100)">
+    <!-- the drop cap -->
+    <path fill="#0B63CE" d="M118,140 H316 V166 C278,168 262,184 260,212 V482 H408 C434,482 450,456 456,398 H470 V520 H118 V494 C152,492 170,478 172,446 V212 C170,184 154,168 118,166 Z"/>
+    <!-- text beside the cap -->
+    <rect x="512" y="166" width="194" height="34" rx="17" fill="#C9CED6"/>
+    <rect x="512" y="246" width="194" height="34" rx="17" fill="#C9CED6"/>
+    <rect x="512" y="326" width="194" height="34" rx="17" fill="#C9CED6"/>
+    <rect x="512" y="406" width="132" height="34" rx="17" fill="#C9CED6"/>
+    <!-- and below it -->
+    <rect x="118" y="586" width="588" height="34" rx="17" fill="#C9CED6"/>
+    <rect x="118" y="666" width="400" height="34" rx="17" fill="#C9CED6"/>
+  </g>
+</svg>

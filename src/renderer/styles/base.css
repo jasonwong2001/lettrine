@@ -1,0 +1,272 @@
+/* Lettrine base.css — the editor-document styles, also embedded in exports.
+   Editing mechanics are in editor.css and the app chrome in chrome.css. */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --select-text-bg-color: #B5D6FC;
+  --select-text-font-color: auto;
+  --monospace: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --title-bar-height: 20px;
+  --item-hover-bg-color: #f5f5f5;
+}
+
+html {
+  font-size: 14px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", 'SF Pro', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1.42857143;
+  overflow-x: hidden;
+  background: inherit;
+}
+
+*, *:after, *:before { box-sizing: border-box; }
+
+.in-text-selection, ::selection {
+  background: var(--select-text-bg-color);
+  color: var(--select-text-font-color);
+  text-shadow: none;
+}
+
+.hidden { display: none; }
+.md-reset {
+  margin: 0; padding: 0; border: 0; outline: 0; vertical-align: top;
+  background: 0 0; text-decoration: none; float: none; position: static;
+  width: auto; height: auto; white-space: nowrap; cursor: inherit;
+  line-height: normal; font-weight: 400; text-align: left; box-sizing: content-box;
+}
+
+/* ---------- writing area ---------- */
+#write {
+  margin: 0 auto 0;
+  height: auto;
+  width: inherit;
+  word-break: normal;
+  word-wrap: break-word;
+  position: relative;
+  white-space: normal;
+  overflow-x: visible;
+  padding-top: 36px;
+  outline: none;
+}
+
+p { line-height: inherit; orphans: 4; }
+li p { orphans: 1; }
+
+h1, h2, h3, h4, h5, h6 {
+  page-break-after: avoid; break-after: avoid-page;
+  page-break-inside: avoid; orphans: 4;
+  margin-top: 1rem; margin-bottom: 1rem;
+  white-space: pre-wrap;
+  cursor: text;
+  position: relative;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+
+a { cursor: pointer; }
+a.url { word-break: break-all; }
+a:active, a:hover { outline: 0; }
+
+/* complete syntax markers are hidden; the source walk still reads them */
+.md-attr { display: none; }
+
+/* ---------- lists ---------- */
+li { margin: 0; position: relative; }
+ul, ol { position: relative; }
+li p, li .mathjax-block { margin: .5rem 0; }
+li blockquote { margin: 1rem 0; }
+blockquote > :first-child, li > :first-child { margin-top: 0; }
+blockquote > :last-child { margin-bottom: 0; }
+
+.md-task-list-item { position: relative; list-style-type: none; }
+.task-list-item.md-task-list-item { padding-left: 0; }
+.md-task-list-item > input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-left: -1.2em;
+  margin-top: calc(1em - 10px);
+  border: none;
+  cursor: pointer;
+}
+
+/* ---------- blockquote / code / math ---------- */
+blockquote { margin: 1rem 0; }
+
+.md-fences {
+  font-size: .9rem;
+  position: relative;
+  display: block;
+  page-break-inside: avoid;
+  text-align: left;
+  overflow: visible;
+  white-space: pre;
+  background: inherit;
+}
+#write pre { white-space: pre-wrap; }
+#write pre.ic-contain-cm { white-space: normal; }
+
+.md-math-block { width: 100%; }
+.md-math-block .katex-display { width: 100%; }
+.md-math-body a[href^="#md-equation-"] { color: var(--md-accent, #3182ce); text-decoration: underline; cursor: pointer; }
+.md-math-block:not(:empty):after { display: none; }
+.math { font-size: 1rem; }
+.MathJax_ref { fill: currentColor; }
+#write .MathJax_Display { margin: .8em 0 0 0; }
+mjx-container { page-break-inside: avoid; }
+.md-inline-math-container mjx-container { zoom: .95; }
+
+.md-mathjax-tooltip {
+  position: absolute;
+  top: 0; right: 0;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.md-math-block:hover .md-mathjax-tooltip,
+.md-fences:hover .md-mathjax-tooltip { opacity: 1; }
+
+.md-blockmeta { color: #CCC; font-weight: 700; font-style: italic; }
+
+/* ---------- code / inline ---------- */
+code, pre, samp, tt { font-family: var(--monospace); }
+code { text-align: left; vertical-align: initial; }
+
+kbd {
+  margin: 0 .1em;
+  padding: .1em .6em;
+  font-size: .8em;
+  color: #242729;
+  background: #fff;
+  border: 1px solid #adb3b9;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(12,13,14,.2), 0 0 0 2px #FFF inset;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+mark { background: #ff0; color: #000; }
+.md-comment { color: #a27f03; opacity: .6; font-family: var(--monospace); }
+
+/* ---------- images ---------- */
+img { max-width: 100%; vertical-align: middle; image-orientation: from-image; }
+img:not([height]) { height: auto; }
+figure {
+  overflow-x: auto;
+  margin: 0;
+  max-width: calc(100% + 16px);
+  padding: 0;
+  margin-left: 0;
+  margin-top: 1.2em;
+  margin-bottom: 1.2em;
+}
+figure > table { margin: 0; }
+p > .md-image:only-child:not(.md-img-error) img,
+p > img:only-child { display: block; margin: auto; }
+p > .md-image:only-child { display: inline-block; width: 100%; }
+.md-image > .md-meta {
+  border-radius: 3px;
+  padding: 2px 0 0 4px;
+  font-size: .9em;
+  color: inherit;
+}
+
+/* ---------- tables ---------- */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+  overflow: auto;
+  page-break-inside: auto;
+  text-align: left;
+  margin: 1rem 0;
+}
+thead { display: table-header-group; }
+thead, tr { page-break-inside: avoid; }
+table.md-table td { min-width: 32px; }
+table tr th { border-bottom: 0; }
+
+/* ---------- GFM alert blocks ---------- */
+#write blockquote.md-alert {
+  padding: .8em 1em;
+  color: inherit;
+  border-left: .25em solid var(--alert-color);
+  background: color-mix(in srgb, var(--alert-color) 7%, transparent);
+  border-radius: 0 6px 6px 0;
+}
+.md-alert-note { --alert-color: #0969da; }
+.md-alert-tip { --alert-color: #1f883d; }
+.md-alert-important { --alert-color: #8250df; }
+.md-alert-warning { --alert-color: #9a6700; }
+.md-alert-caution { --alert-color: #cf222e; }
+.md-alert-title { display: flex; align-items: center; gap: .5em; color: var(--alert-color); font-weight: 600; margin-bottom: .5em; }
+.md-alert-icon { flex: none; width: 1em; height: 1em; }
+.md-alert-source-only { display: none; }
+#write .md-alert > p { margin-top: .5em; margin-bottom: .5em; }
+
+/* ---------- TOC block ---------- */
+.md-toc {
+  min-height: 3.58rem;
+  position: relative;
+  font-size: .9rem;
+  border-radius: 10px;
+  margin: 1rem 0;
+}
+.md-toc-item { display: block; color: #4183c4; }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-h1 .md-toc-inner { margin-left: 0; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+
+/* ---------- link definitions ---------- */
+.md-def-link, .md-def-footnote {
+  position: relative;
+  display: block;
+  margin: .5rem 0;
+  color: #999;
+  font-size: .9rem;
+}
+.md-def-content { display: inline-block; }
+.md-def-title { color: #999; font-style: italic; }
+
+/* ---------- misc ---------- */
+sup.md-footnote {
+  padding: 2px 4px;
+  background-color: rgba(238,238,238,.7);
+  color: #555;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.footnotes { opacity: .8; font-size: .9rem; margin: 1em 0; }
+.footnote-line { margin-top: .714em; font-size: .7em; }
+.footnotes-area { color: #888; margin-top: .714rem; padding-bottom: .143rem; white-space: normal; }
+
+.md-pants { unicode-bidi: isolate; }
+.md-emoji { position: relative; }
+.md-emoji .md-emoji-control-ch { display: none; }
+
+/* print */
+@media print {
+  body, html { border: 1px solid transparent; font-variant-ligatures: no-common-ligatures; }
+  #write { border-color: transparent !important; margin-top: 0; padding-top: 0 !important; padding-bottom: 0 !important; }
+  #write > p:nth-child(1) { margin-top: 0; }
+  pre { page-break-inside: avoid; word-wrap: break-word; }
+  .app-export * { -webkit-print-color-adjust: exact; }
+}

@@ -1,0 +1,11 @@
+node_modules/
+.build/
+dist/
+*.zip
+*.dmg
+*.log
+.DS_Store
+.vscode/
+.idea/
+AGENTS.md
+/docs/**/*.md

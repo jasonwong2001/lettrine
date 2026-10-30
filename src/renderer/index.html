@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lettrine</title>
+<!-- Cascade: document base → CodeMirror mechanics → document theme (+ user
+     overrides) → Lettrine editor surface → application chrome → KaTeX.
+     Themes style the document; chrome.css owns every control around it. -->
+<link rel="stylesheet" href="./styles/base.css">
+<link rel="stylesheet" href="../../node_modules/codemirror/lib/codemirror.css">
+<!-- default theme ships inline so the first paint is already themed (Lettrine
+     injects the theme link before first paint; the id is its anchor) -->
+<link rel="stylesheet" href="./styles/themes/lettrine.css" id="theme_css" title="theme_css">
+<link rel="stylesheet" id="base_user_css">
+<link rel="stylesheet" id="theme_user_css">
+<link rel="stylesheet" href="./styles/editor.css">
+<link rel="stylesheet" href="./styles/chrome.css">
+<link rel="stylesheet" href="../../node_modules/katex/dist/katex.min.css">
+<script defer src="../../node_modules/katex/dist/katex.min.js"></script>
+</head>
+<body class="sidebar-visible">
+<!-- ======================= icons (16 × 16, stroked) ======================= -->
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-sidebar" viewBox="0 0 16 16"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2.25"/><path d="M6 2.75v10.5M3.5 5.25h.75M3.5 7.25h.75"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.75 4.25c0-.83.67-1.5 1.5-1.5h2.6c.4 0 .78.16 1.06.44l1 1.06h4.84c.83 0 1.5.67 1.5 1.5v5.5c0 .83-.67 1.5-1.5 1.5h-9.5c-.83 0-1.5-.67-1.5-1.5z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 16 16"><path d="M4.25 1.75h4.6l3.4 3.4v8.1c0 .55-.45 1-1 1h-7c-.55 0-1-.45-1-1v-10.5c0-.55.45-1 1-1z"/><path d="M8.75 1.75v3.5h3.5M5.75 8.5h4.5M5.75 11h3"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 16 16"><path d="M6.25 3.75L10.5 8l-4.25 4.25"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 16 16"><path d="M3.75 6.25L8 10.5l4.25-4.25"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 16 16"><path d="M3.75 9.75L8 5.5l4.25 4.25"/></symbol>
+  <symbol id="i-updown" viewBox="0 0 16 16"><path d="M5.25 6.25L8 3.5l2.75 2.75M5.25 9.75L8 12.5l2.75-2.75"/></symbol>
+  <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.4 10.4l3.35 3.35"/></symbol>
+  <symbol id="i-compose" viewBox="0 0 16 16"><path d="M13.25 8.75v3.5c0 .83-.67 1.5-1.5 1.5h-8c-.83 0-1.5-.67-1.5-1.5v-8c0-.83.67-1.5 1.5-1.5h3.5"/><path d="M11.6 2.15a1.2 1.2 0 0 1 1.7 1.7L8.5 8.65l-2.25.6.6-2.25z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.75" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.25" cy="8" r="1.1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-outline" viewBox="0 0 16 16"><path d="M2.25 3.75h11.5M5.25 8h8.5M5.25 12.25h8.5"/></symbol>
+  <symbol id="i-code" viewBox="0 0 16 16"><path d="M5.25 4.25L1.75 8l3.5 3.75M10.75 4.25L14.25 8l-3.5 3.75"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="M4.25 4.25l7.5 7.5M11.75 4.25l-7.5 7.5"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 16 16"><path d="M7.13 2.5a1 1 0 0 1 1.74 0l5.5 9.75a1 1 0 0 1-.87 1.5h-11a1 1 0 0 1-.87-1.5z"/><path d="M8 6.25v3M8 11.5v.01"/></symbol>
+  <symbol id="i-reveal" viewBox="0 0 16 16"><path d="M9.75 2.25h4v4M13.5 2.5L7.75 8.25"/><path d="M12.25 9.5v2.75c0 .83-.67 1.5-1.5 1.5h-7c-.83 0-1.5-.67-1.5-1.5v-7c0-.83.67-1.5 1.5-1.5H6.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="1.5"/><path d="M10.75 5.25V3.75c0-.83-.67-1.5-1.5-1.5h-5.5c-.83 0-1.5.67-1.5 1.5v5.5c0 .83.67 1.5 1.5 1.5h1.5"/></symbol>
+  <symbol id="i-history" viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.25 2.75v2.5h2.5M8 5.25V8l2 1.5"/></symbol>
+  <symbol id="i-folder-plus" viewBox="0 0 16 16"><path d="M1.75 4.25c0-.83.67-1.5 1.5-1.5h2.6c.4 0 .78.16 1.06.44l1 1.06h4.84c.83 0 1.5.67 1.5 1.5v5.5c0 .83-.67 1.5-1.5 1.5h-9.5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M8 6.75v3.5M6.25 8.5h3.5"/></symbol>
+  <!-- Settings sections -->
+  <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2.25 4.5h6.5M12.25 4.5h1.5M2.25 11.5h1.5M7.25 11.5h6.5"/><circle cx="10.5" cy="4.5" r="1.75"/><circle cx="5.5" cy="11.5" r="1.75"/></symbol>
+  <symbol id="i-text" viewBox="0 0 16 16"><path d="M2.25 3.75h11.5M2.25 7h7M2.25 10.25h9M2.25 13.5h5"/><path d="M12.75 8.25v6"/></symbol>
+  <symbol id="i-appearance" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M8 2.25a5.75 5.75 0 0 1 0 11.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-image" viewBox="0 0 16 16"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><circle cx="5.75" cy="6.25" r="1.25"/><path d="M2.25 11.75l3.5-3.25 2.75 2.5 2-1.75 3.25 2.75"/></symbol>
+  <symbol id="i-export" viewBox="0 0 16 16"><path d="M8 1.75v8M5.25 4.5L8 1.75l2.75 2.75"/><path d="M5.75 7h-1.5c-.83 0-1.5.67-1.5 1.5v4.25c0 .83.67 1.5 1.5 1.5h7.5c.83 0 1.5-.67 1.5-1.5V8.5c0-.83-.67-1.5-1.5-1.5h-1.5"/></symbol>
+  <symbol id="i-spelling" viewBox="0 0 16 16"><path d="M1.75 10.75l2.5-7.5 2.5 7.5M2.6 8.25h3.3"/><path d="M8.75 10.25l2 2 3.5-4.5"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.25" y="3.75" width="13.5" height="8.5" rx="1.75"/><path d="M4.25 6.75h.01M6.75 6.75h.01M9.25 6.75h.01M11.75 6.75h.01M5 9.5h6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 16 16"><path d="M6 4h8M6 8h8M6 12h8"/><circle cx="2.5" cy="4" r=".75"/><circle cx="2.5" cy="8" r=".75"/><circle cx="2.5" cy="12" r=".75"/></symbol>
+  <symbol id="i-numbered-list" viewBox="0 0 16 16"><path d="M6.5 4h7M6.5 8h7M6.5 12h7M2 2.5h1v3M1.75 9.5a1.25 1.25 0 1 1 2.25.75l-2.25 2h2.5"/></symbol>
+  <symbol id="i-task-list" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="4" height="4" rx=".75"/><path d="M2.5 4.5l.75.75 1.5-1.5M8 4.5h6M8 11.5h6"/><rect x="1.5" y="9.5" width="4" height="4" rx=".75"/></symbol>
+  <symbol id="i-table" viewBox="0 0 16 16"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.25"/><path d="M2 6.5h12M2 10h12M6 3v10M10 3v10"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.25 10.5l-1 1a2.65 2.65 0 0 1-3.75-3.75L5 4.25A2.65 2.65 0 0 1 8.75 8M9.75 5.5l1-1a2.65 2.65 0 0 1 3.75 3.75L11 11.75A2.65 2.65 0 0 1 7.25 8"/></symbol>
+</svg>
+
+<!-- ======================= library sidebar ======================= -->
+<aside class="sidebar stopselect" id="app-sidebar" aria-label="Library">
+  <div class="sidebar-top" data-drag-region>
+    <button type="button" class="icon-btn" id="sidebar-toggle-in" data-command="view.toggleSidebar" title="Hide Sidebar (⌃⌘S)" aria-label="Hide Sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+  </div>
+  <div class="ui-sidebar-views" role="tablist" aria-label="Sidebar Views">
+    <button type="button" id="sidebar-view-files" role="tab" data-sidebar-view="files" aria-controls="file-library" aria-selected="true">Files</button>
+    <button type="button" id="sidebar-view-outline" role="tab" data-sidebar-view="outline" aria-controls="sidebar-outline" aria-selected="false" tabindex="-1">Outline</button>
+  </div>
+  <!-- Searching replaces the folder row with the search field. -->
+  <div class="library-head">
+    <button type="button" class="library-switcher" id="library-menu-btn" aria-haspopup="menu" title="Folder">
+      <svg class="icon"><use href="#i-folder"/></svg>
+      <span id="library-name">No Folder Open</span>
+      <svg class="icon icon-sm"><use href="#i-updown"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="library-search-btn" data-command="edit.findInFiles" title="Search in Folder (⇧⌘F)" aria-label="Search in Folder"><svg class="icon"><use href="#i-search"/></svg></button>
+    <button type="button" class="icon-btn" id="library-new-btn" title="New File in Folder" aria-label="New File in Folder"><svg class="icon"><use href="#i-compose"/></svg></button>
+    <button type="button" class="icon-btn" id="library-options-btn" title="View Options" aria-label="View Options" aria-haspopup="menu"><svg class="icon"><use href="#i-more"/></svg></button>
+  </div>
+  <div class="search-field library-search" id="file-library-search-panel" hidden>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" id="file-library-search-input" placeholder="Search in Folder" aria-label="Search in Folder"
+           autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+    <span class="search-options">
+      <button type="button" class="opt-btn" id="filesearch-case-option-btn" title="Match Case" aria-label="Match Case" aria-pressed="false">Aa</button>
+      <button type="button" class="opt-btn opt-word" id="filesearch-word-option-btn" title="Whole Words" aria-label="Whole Words" aria-pressed="false">ab</button>
+      <button type="button" class="opt-btn" id="filesearch-regexp-option-btn" title="Regular Expression" aria-label="Regular Expression" aria-pressed="false">.*</button>
+    </span>
+    <button type="button" class="icon-btn" id="file-library-search-close" title="Close Search" aria-label="Close Search"><svg class="icon"><use href="#i-close"/></svg></button>
+  </div>
+  <div class="sidebar-scroll" id="sidebar-content">
+    <div id="file-library" class="active" role="tabpanel" aria-labelledby="sidebar-view-files">
+      <div id="file-library-list" role="tree" aria-label="Files" tabindex="-1"></div>
+    </div>
+    <div id="file-library-search" role="tabpanel" aria-labelledby="sidebar-view-files" hidden>
+      <div id="file-library-search-result" aria-live="polite"></div>
+    </div>
+    <div id="sidebar-outline" role="tabpanel" aria-labelledby="sidebar-view-outline" hidden>
+      <nav id="sidebar-outline-content" class="outline-list" aria-label="Headings"></nav>
+    </div>
+  </div>
+</aside>
+<div id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Sidebar"></div>
+
+<!-- ======================= document column ======================= -->
+<main class="main" id="main">
+  <header class="doc-bar stopselect" id="doc-bar" data-drag-region>
+    <div class="doc-bar-lead">
+      <button type="button" class="icon-btn" id="sidebar-toggle" data-command="view.toggleSidebar" title="Show Sidebar (⌃⌘S)" aria-label="Show Sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    </div>
+    <button type="button" class="doc-title" id="doc-title" aria-haspopup="dialog" aria-expanded="false" aria-controls="doc-popover" title="Document Info">
+      <span class="doc-name" id="titlebar-document-name">Untitled</span>
+      <span class="doc-status" id="titlebar-document-status"></span>
+    </button>
+    <div class="doc-bar-actions">
+      <button type="button" class="text-btn" id="titlebar-wordcount" aria-haspopup="dialog" aria-controls="doc-popover" title="Word Count">0 words</button>
+      <!-- Shown only while the document is zoomed or the zoom popover is open. -->
+      <button type="button" class="text-btn ui-zoom-button" id="tb-zoom" data-command="view.zoomPopover" aria-haspopup="dialog" aria-expanded="false" aria-controls="zoom-popover" title="Document Zoom" hidden>100%</button>
+      <button type="button" class="icon-btn" id="tb-outline" data-command="view.outline" aria-pressed="false" title="Outline (⌃⌘O)" aria-label="Outline"><svg class="icon"><use href="#i-outline"/></svg></button>
+      <button type="button" class="icon-btn" id="tb-source" aria-pressed="false" title="Source Code Mode (⌘/)" aria-label="Source Code Mode"><svg class="icon"><use href="#i-code"/></svg></button>
+    </div>
+  </header>
+
+  <div class="ui-document-toolbar stopselect" id="document-toolbar" role="toolbar" aria-label="Document Toolbar" hidden>
+    <div class="ui-toolbar-group">
+      <button type="button" class="ui-toolbar-edit ui-toolbar-heading" id="toolbar-headings" title="Headings" aria-label="Headings" aria-haspopup="menu">H<svg class="icon icon-sm"><use href="#i-chevron-down"/></svg></button>
+      <button type="button" class="ui-toolbar-edit ui-toolbar-strong" data-command="inline.strong" title="Strong" aria-label="Strong" tabindex="-1">B</button>
+      <button type="button" class="ui-toolbar-edit ui-toolbar-emphasis" data-command="inline.emphasis" title="Emphasis" aria-label="Emphasis" tabindex="-1">I</button>
+    </div>
+    <div class="ui-toolbar-group">
+      <button type="button" class="ui-toolbar-edit" data-command="paragraph.unorderedList" title="Unordered List" aria-label="Unordered List" tabindex="-1"><svg class="icon"><use href="#i-list"/></svg></button>
+      <button type="button" class="ui-toolbar-edit" data-command="paragraph.orderedList" title="Ordered List" aria-label="Ordered List" tabindex="-1"><svg class="icon"><use href="#i-numbered-list"/></svg></button>
+      <button type="button" class="ui-toolbar-edit" data-command="paragraph.task" title="Task List" aria-label="Task List" tabindex="-1"><svg class="icon"><use href="#i-task-list"/></svg></button>
+    </div>
+    <div class="ui-toolbar-group">
+      <button type="button" class="ui-toolbar-edit" data-command="paragraph.table" title="Table…" aria-label="Table…" tabindex="-1"><svg class="icon"><use href="#i-table"/></svg></button>
+      <button type="button" class="ui-toolbar-edit ui-toolbar-math" data-command="paragraph.mathBlock" title="Math Block" aria-label="Math Block" tabindex="-1">x<sup>2</sup></button>
+      <button type="button" class="ui-toolbar-edit" data-command="paragraph.codeFences" title="Code Fences" aria-label="Code Fences" tabindex="-1"><svg class="icon"><use href="#i-code"/></svg></button>
+      <button type="button" class="ui-toolbar-edit" data-command="inline.link" title="Link…" aria-label="Link…" tabindex="-1"><svg class="icon"><use href="#i-link"/></svg></button>
+      <button type="button" class="ui-toolbar-edit" data-command="inline.image" title="Image…" aria-label="Image…" tabindex="-1"><svg class="icon"><use href="#i-image"/></svg></button>
+      <button type="button" class="ui-toolbar-edit ui-toolbar-toc" data-command="paragraph.toc" title="Table of Contents" aria-label="Table of Contents" tabindex="-1">TOC</button>
+    </div>
+    <button type="button" class="ui-toolbar-dismiss" data-command="view.toolbar" title="Hide Document Toolbar" aria-label="Hide Document Toolbar" tabindex="-1"><svg class="icon"><use href="#i-close"/></svg></button>
+  </div>
+
+  <!-- find & replace, below the document bar -->
+  <div class="find-bar stopselect" id="md-searchpanel" role="search" aria-label="Find in Document" hidden>
+    <div class="find-row">
+      <div class="search-field find-field">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="text" id="search-panel-input" placeholder="Find" aria-label="Find" spellcheck="false"
+               autocorrect="off" autocapitalize="off" autocomplete="off">
+        <span class="find-count" id="search-panel-status" aria-live="polite"></span>
+        <span class="search-options">
+          <button type="button" class="opt-btn" id="searchpanel-case-option-btn" title="Match Case" aria-label="Match Case" aria-pressed="false">Aa</button>
+          <button type="button" class="opt-btn opt-word" id="searchpanel-word-option-btn" title="Whole Words" aria-label="Whole Words" aria-pressed="false">ab</button>
+          <button type="button" class="opt-btn" id="searchpanel-regexp-option-btn" title="Regular Expression" aria-label="Regular Expression" aria-pressed="false">.*</button>
+        </span>
+      </div>
+      <div class="segmented">
+        <button type="button" class="icon-btn" id="search-panel-prev" title="Previous Match (⇧⌘G)" aria-label="Previous Match"><svg class="icon"><use href="#i-chevron-up"/></svg></button>
+        <button type="button" class="icon-btn" id="search-panel-next" title="Next Match (⌘G)" aria-label="Next Match"><svg class="icon"><use href="#i-chevron-down"/></svg></button>
+      </div>
+      <button type="button" class="ui-btn ui-btn-quiet" id="search-panel-replace-toggle" aria-pressed="false">Replace</button>
+      <button type="button" class="ui-btn ui-btn-quiet" id="search-panel-close">Done</button>
+    </div>
+    <div class="find-row replace-row">
+      <div class="search-field find-field">
+        <input type="text" id="search-panel-replace-input" placeholder="Replace with" aria-label="Replace with" spellcheck="false"
+               autocorrect="off" autocapitalize="off" autocomplete="off">
+      </div>
+      <button type="button" class="ui-btn" id="search-panel-replace-btn">Replace</button>
+      <button type="button" class="ui-btn" id="search-panel-replaceall-btn">Replace All</button>
+    </div>
+  </div>
+
+  <div class="main-body">
+    <div id="md-content" class="md-content-main">
+      <div id="ic-oversize-body" contenteditable="false" style="display: none;">
+        <div class="empty-state oversize-card" role="alert">
+          <svg class="icon icon-lg"><use href="#i-warning"/></svg>
+          <strong>This file is too large to edit here</strong>
+          <p id="ic-oversize-detail">Lettrine opens Markdown files up to 2 MB.</p>
+          <div class="button-row">
+            <button type="button" id="ic-oversize-close" class="ui-btn">Close</button>
+            <button type="button" id="ic-oversize-file-open-in" class="ui-btn ui-btn-primary">Open in Default App</button>
+          </div>
+        </div>
+      </div>
+      <div id="app-source" style="z-index:-1;">
+        <textarea id="source-editor" spellcheck="false" autocorrect="off"
+                  placeholder="Markdown source"></textarea>
+      </div>
+      <div id="write" contenteditable="true" spellcheck="true" tabindex="0" data-placeholder="Start writing"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ======================= document info popover ======================= -->
+<div class="popover ui-zoom-popover" id="zoom-popover" role="dialog" aria-label="Document Zoom" hidden>
+  <div class="ui-zoom-controls">
+    <button type="button" class="icon-btn" data-command="view.zoomOut" title="Zoom Out" aria-label="Zoom Out">−</button>
+    <output id="zoom-value" aria-live="polite">100%</output>
+    <button type="button" class="icon-btn" data-command="view.zoomIn" title="Zoom In" aria-label="Zoom In">+</button>
+    <button type="button" class="ui-btn" data-command="view.actualSize">Actual Size</button>
+  </div>
+  <label class="ui-zoom-option"><input type="checkbox" id="zoom-mouse-option"><span>Zoom with Command or Control + scroll</span></label>
+</div>
+
+<div class="popover doc-popover" id="doc-popover" role="dialog" aria-label="Document Info" hidden>
+  <div class="doc-info-name" id="doc-info-name">Untitled</div>
+  <div class="doc-info-path" id="doc-info-path"></div>
+  <dl class="doc-stats">
+    <div><dt>Words</dt><dd id="wc-words">0</dd></div>
+    <div><dt>Characters</dt><dd id="wc-chars">0</dd></div>
+    <div><dt>Reading Time</dt><dd id="wc-minutes">0 min</dd></div>
+  </dl>
+  <div class="doc-info-selection" id="doc-info-selection" hidden><span id="wc-sel-words">0</span> <span>words selected</span></div>
+  <div class="doc-info-meta" id="doc-info-meta"></div>
+  <div class="doc-info-actions" id="doc-info-actions">
+    <button type="button" class="ui-btn ui-btn-primary" data-doc-action="save">Save…</button>
+    <button type="button" class="ui-btn" data-doc-action="reveal"><svg class="icon"><use href="#i-reveal"/></svg>Reveal in Finder</button>
+    <button type="button" class="ui-btn" data-doc-action="copy-path"><svg class="icon"><use href="#i-copy"/></svg>Copy Path</button>
+    <button type="button" class="ui-btn" data-doc-action="history"><svg class="icon"><use href="#i-history"/></svg>Document History…</button>
+  </div>
+</div>
+
+<!-- ======================= quick open ======================= -->
+<div id="quick-open" hidden>
+  <div id="quick-open-mask" aria-hidden="true"></div>
+  <div class="quick-open-box" role="dialog" aria-modal="true" aria-label="Open Quickly">
+    <div id="quick-open-input">
+      <svg class="icon"><use href="#i-search"/></svg>
+      <input type="text" tabindex="1" autocorrect="off" spellcheck="false" autocapitalize="off"
+             value="" placeholder="Open Quickly" autocomplete="off" aria-label="Open Quickly"
+             role="combobox" aria-autocomplete="list" aria-controls="quick-open-list" aria-expanded="false">
+    </div>
+    <div class="quick-open-list" id="quick-open-list" role="listbox" aria-label="Files and folders">
+      <div id="quick-open-empty" role="status" hidden></div>
+      <div class="qo-group" id="ic-quick-open-recent-category" role="group" aria-labelledby="qo-title-recent">
+        <div class="qo-group-title" id="qo-title-recent">Recent Files</div>
+        <div id="ic-quick-open-recent-list-inner"></div>
+      </div>
+      <div class="qo-group" id="ic-quick-open-infolder-category" role="group" aria-labelledby="qo-title-files">
+        <div class="qo-group-title" id="qo-title-files">Files</div>
+        <div id="ic-quick-open-file-list-inner"></div>
+      </div>
+      <div class="qo-group" id="ic-quick-open-folder-category" role="group" aria-labelledby="qo-title-folders">
+        <div class="qo-group-title" id="qo-title-folders">Recent Folders</div>
+        <div id="ic-quick-open-folder-list-inner"></div>
+      </div>
+    </div>
+    <div class="quick-open-footer" aria-hidden="true">
+      <span><kbd>↑</kbd><kbd>↓</kbd> to navigate</span>
+      <span><kbd>↩</kbd> to open</span>
+      <span><kbd>esc</kbd> to dismiss</span>
+      <span id="quick-open-result-count"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= toasts ======================= -->
+<div class="md-notification-container" aria-live="polite">
+  <div id="md-notification" role="status"></div>
+</div>
+
+<!-- ======================= insert table ======================= -->
+<div class="modal" id="table-insert-dialog" role="dialog" aria-modal="true" aria-labelledby="table-insert-title" style="display:none">
+  <div class="modal-dialog modal-sm">
+    <form class="modal-content" id="table-insert-form">
+      <div class="modal-header"><h2 class="modal-title" id="table-insert-title">Insert Table</h2></div>
+      <div class="modal-body table-insert-fields">
+        <label class="field"><span>Columns</span><input id="table-insert-col" class="ui-input" type="number" min="1" max="20" value="3"></label>
+        <label class="field"><span>Rows</span><input id="table-insert-row" class="ui-input" type="number" min="1" max="30" value="4"></label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="ui-btn" id="table-insert-cancel">Cancel</button>
+        <button type="submit" class="ui-btn ui-btn-primary" id="table-insert-ok">Insert</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================= settings ======================= -->
+<div class="modal settings" id="preferences-dialog" role="dialog" aria-modal="true" aria-labelledby="preferences-title" aria-hidden="true" style="display:none">
+  <div class="modal-dialog settings-dialog">
+    <div class="modal-content" tabindex="-1">
+      <div class="settings-body">
+        <nav class="nav-group settings-nav" aria-label="Settings Sections">
+          <div class="settings-title" id="preferences-title">Settings</div>
+          <div class="nav-group-item active" data-pane="general" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>General</div>
+          <div class="nav-group-item" data-pane="editor" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-text"/></svg>Editor</div>
+          <div class="nav-group-item" data-pane="appearance" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-appearance"/></svg>Appearance</div>
+          <div class="nav-group-item" data-pane="image" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>Images</div>
+          <div class="nav-group-item" data-pane="export" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-export"/></svg>Export</div>
+          <div class="nav-group-item" data-pane="spelling" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-spelling"/></svg>Spelling</div>
+          <div class="nav-group-item" data-pane="shortcuts" role="button" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg>Shortcuts</div>
+        </nav>
+        <div class="settings-panes">
+          <section class="pref-pane" id="pref-pane-general" aria-label="General">
+            <div class="pref-group" data-pref-group="general-language"></div>
+            <h3 class="pref-group-title">Saving</h3>
+            <div class="pref-group" data-pref-group="general-saving">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-autosave"><span>Auto Save</span></label>
+            </div>
+            <h3 class="pref-group-title">File Format</h3>
+            <div class="pref-group" data-pref-group="general-files">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-final-newline"><span>Insert Final New Line On Save</span></label>
+              <label class="pref-row">
+                <span class="pref-label">Line Endings</span>
+                <select id="pref-line-endings">
+                  <option value="">Preserve existing (LF for new files)</option>
+                  <option value="LF">Unix Line Endings (LF)</option>
+                  <option value="CRLF">Windows Line Endings (CRLF)</option>
+                </select>
+              </label>
+            </div>
+            <h3 class="pref-group-title">Startup and Other Files</h3>
+            <div class="pref-group" data-pref-group="general-startup"></div>
+            <p class="pref-hint">Session restore keeps unsaved drafts locally. Turning it off removes the saved session.</p>
+            <h3 class="pref-group-title">Updates and Privacy</h3>
+            <div class="pref-group" data-pref-group="general-maintenance"></div>
+            <p class="pref-hint" id="pref-maintenance-reports">Anonymous reports contain only app version, macOS major version, CPU architecture and launch count. No document content, paths or persistent identifier is sent.</p>
+            <p class="pref-hint" id="pref-maintenance-unavailable">Maintenance services are unavailable in this development build.</p>
+            <p class="pref-hint" id="pref-maintenance-releases" hidden>This version doesn't check for updates or send usage reports. New versions are published on the releases page.</p>
+            <div class="pref-actions">
+              <button type="button" class="ui-btn" id="pref-check-updates" data-command="app.checkUpdates">Check for Updates…</button>
+              <button type="button" class="ui-btn" id="pref-privacy" data-command="app.privacy">Privacy Policy</button>
+            </div>
+            <h3 class="pref-group-title">Import</h3>
+            <div class="pref-group" data-pref-group="general-import"></div>
+          </section>
+
+          <section class="pref-pane" id="pref-pane-editor" aria-label="Editor" hidden>
+            <h3 class="pref-group-title">Writing</h3>
+            <div class="pref-group" data-pref-group="editor-writing">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-spellcheck"><span>Check Spelling While Typing</span></label>
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-copy-md"><span>Copy Markdown source by default</span></label>
+            </div>
+            <h3 class="pref-group-title">Smart Punctuation</h3>
+            <div class="pref-group" data-pref-group="editor-typography"></div>
+            <h3 class="pref-group-title">Indentation</h3>
+            <div class="pref-group" data-pref-group="editor-indent"></div>
+            <h3 class="pref-group-title">Code Editing</h3>
+            <div class="pref-group" data-pref-group="editor-code"></div>
+            <h3 class="pref-group-title">Code, Math and Diagrams</h3>
+            <div class="pref-group" data-pref-group="editor-render">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-fence-lineno"><span>Show line numbers for code fences</span></label>
+            </div>
+            <h3 class="pref-group-title">Writing Modes</h3>
+            <div class="pref-group" data-pref-group="editor-modes">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-focus-mode"><span>Focus Mode</span><kbd>F8</kbd></label>
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-typewriter"><span>Typewriter Mode</span><kbd>F9</kbd></label>
+            </div>
+            <h3 class="pref-group-title">Text Replacements</h3>
+            <div class="pref-group" data-pref-group="editor-replacements"></div>
+          </section>
+
+          <section class="pref-pane" id="pref-pane-appearance" aria-label="Appearance" hidden>
+            <h3 class="pref-group-title">Theme</h3>
+            <div class="pref-group" data-pref-group="appearance-mode"></div>
+            <div class="pref-group" data-pref-group="appearance-theme">
+              <label class="pref-row">
+                <span class="pref-label">Light Theme</span>
+                <select id="pref-theme">
+                  <option value="lettrine">Lettrine</option>
+                </select>
+              </label>
+              <label class="pref-row">
+                <span class="pref-label">Dark Theme</span>
+                <select id="pref-theme-dark">
+                  <option value="lettrine-dark">Lettrine Dark</option>
+                </select>
+              </label>
+              <div class="pref-row pref-actions">
+                <button type="button" class="ui-btn" id="pref-open-themes">Open Theme Folder</button>
+                <button type="button" class="ui-btn ui-btn-quiet" id="pref-get-themes">About Custom Themes</button>
+              </div>
+            </div>
+            <h3 class="pref-group-title">Text</h3>
+            <div class="pref-group" data-pref-group="appearance-text">
+              <label class="pref-row">
+                <span class="pref-label">Font Size</span>
+                <input type="number" id="pref-font-size" min="10" max="32" step="1">
+              </label>
+            </div>
+            <h3 class="pref-group-title">Window</h3>
+            <div class="pref-group" data-pref-group="appearance-window">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-word-count"><span>Show word count in the title bar</span></label>
+              <label class="pref-row">
+                <span class="pref-label">Reading Speed</span>
+                <span class="pref-inline-control"><input type="number" id="pref-reading-speed" min="100" max="1000" step="1"><span class="pref-hint">words per minute</span></span>
+              </label>
+            </div>
+          </section>
+
+          <section class="pref-pane" id="pref-pane-image" aria-label="Images" hidden>
+            <h3 class="pref-group-title">When Inserting Images</h3>
+            <div class="pref-group">
+              <label class="pref-row">
+                <span class="pref-label">Paste Images Into</span>
+                <select id="pref-image-dir">
+                  <option value="./assets">The ./assets folder</option>
+                  <option value="./">The document's folder</option>
+                  <option value="inline">The document, as a data URI</option>
+                </select>
+              </label>
+              <label class="pref-row"><span class="pref-label">Custom Image Folder</span><input type="text" id="pref-img-custom-dir" placeholder="Optional relative or absolute path"></label>
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-img-copy" checked><span>Copy inserted image files to the image folder</span></label>
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-img-rel-path" checked><span>Add ./ for relative paths</span></label>
+            </div>
+            <h3 class="pref-group-title">Publishing</h3>
+            <div class="pref-group">
+              <label class="pref-row"><span class="pref-label">Local Root Path</span><input type="text" id="pref-img-root-path" placeholder="/path/to/site"></label>
+              <label class="pref-row"><span class="pref-label">Published Root URL</span><input type="text" id="pref-img-root-url" placeholder="/ or https://example.com"></label>
+            </div>
+            <h3 class="pref-group-title">Image Upload</h3>
+            <div class="pref-group pref-stack" data-pref-group="image-upload"></div>
+            <p class="pref-hint">Uploads use the configured service or application. A local copy is kept if upload fails.</p>
+          </section>
+
+          <section class="pref-pane" id="pref-pane-export" aria-label="Export" hidden>
+            <h3 class="pref-group-title">Destination</h3>
+            <div class="pref-group" data-pref-group="export-destination"></div>
+            <h3 class="pref-group-title">Image</h3>
+            <div class="pref-group" data-pref-group="export-image"></div>
+            <h3 class="pref-group-title">PDF</h3>
+            <div class="pref-group" data-pref-group="export-pdf">
+              <label class="pref-row"><span class="pref-label">Header</span><input type="text" id="pref-pdf-header" placeholder="None"></label>
+              <label class="pref-row"><span class="pref-label">Footer</span><input type="text" id="pref-pdf-footer" placeholder="Page ${pageNo} of ${totalPages}"></label>
+              <label class="pref-row"><span class="pref-label">Author</span><input type="text" id="pref-pdf-author" placeholder="None"></label>
+            </div>
+            <h3 class="pref-group-title">Other Formats</h3>
+            <div class="pref-group" data-pref-group="export-pandoc"></div>
+            <h3 class="pref-group-title">After Export</h3>
+            <div class="pref-group" data-pref-group="export-after">
+              <label class="pref-row pref-check"><input type="checkbox" id="pref-export-open" checked><span>Open the exported file</span></label>
+            </div>
+          </section>
+
+          <section class="pref-pane" id="pref-pane-spelling" aria-label="Spelling" hidden>
+            <h3 class="pref-group-title">User Dictionary</h3>
+            <div class="pref-group pref-stack">
+              <label class="pref-field">Added words (one per line)<textarea id="pref-dictionary-words" rows="5" spellcheck="false"></textarea></label>
+              <label class="pref-field">Ignored words (one per line)<textarea id="pref-dictionary-ignored" rows="4" spellcheck="false"></textarea></label>
+              <div class="pref-hint pref-path" id="pref-dictionary-path"></div>
+            </div>
+            <h3 class="pref-group-title">Language Dictionaries</h3>
+            <div class="pref-group pref-stack">
+              <p class="pref-hint" id="pref-dictionary-note"></p>
+              <div class="pref-actions"><button type="button" class="ui-btn" id="pref-dictionary-system">Open System Spelling Settings</button></div>
+              <div id="pref-dictionary-download-controls" class="pref-actions"><select aria-label="Dictionary language"></select><button type="button" class="ui-btn" id="pref-dictionary-download">Download and Enable</button></div>
+              <div id="pref-dictionary-languages"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="modal-footer settings-footer">
+        <span class="pref-hint">Changes apply when you close Settings.</span>
+        <button type="button" class="ui-btn ui-btn-primary" id="preferences-done">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- emoji completion -->
+<div id="emoji-completion" class="stopselect" role="listbox" aria-label="Emoji"></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

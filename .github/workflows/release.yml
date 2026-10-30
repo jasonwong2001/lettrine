@@ -1,0 +1,79 @@
+name: Release
+
+# Pushing a v<version> tag builds that commit and creates a draft release.
+# CONTRIBUTING.md describes the release commands and publishing steps.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Draft release
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Show toolchain versions
+        run: |
+          node --version
+          xcrun swiftc --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit and DOM tests
+        run: npm test
+
+      - name: Check the tag matches the version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match the package.json version ($version)."
+            exit 1
+          fi
+
+      - name: Build and package the release
+        env:
+          LETTRINE_RELEASES_URL: https://github.com/${{ github.repository }}/releases
+        run: npm run release
+
+      - name: Extract the release notes
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          awk -v version="$version" '
+            /^## / {
+              if (in_section) exit
+              in_section = ($2 == "[" version "]")
+              next
+            }
+            in_section { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::warning::CHANGELOG.md has no section for $version. Add release notes before publishing."
+            printf 'CHANGELOG.md has no section for %s. Add release notes before publishing this draft.\n' "$version" > "$RUNNER_TEMP/release-notes.md"
+          fi
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          gh release create "$GITHUB_REF_NAME" "dist/Lettrine-$version.zip" dist/SHA256SUMS \
+            --draft --verify-tag --title "Lettrine $version" --notes-file "$RUNNER_TEMP/release-notes.md"

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/jason-bot-147/lettrine/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.
+  - name: Code of Conduct
+    url: https://github.com/jason-bot-147/lettrine/blob/main/CODE_OF_CONDUCT.md
+    about: Read the community standards and how to report conduct privately.

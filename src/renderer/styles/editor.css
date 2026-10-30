@@ -1,0 +1,487 @@
+/* Lettrine editor surface — the live-preview DOM contract (editor.js,
+   inline.js) and the embedded CodeMirror editors. Themes style the document;
+   these rules keep its mechanics working under every theme. Colors derive
+   from the theme's --bg-color / --text-color so dark themes need no extras. */
+
+:root {
+  --md-ink: var(--text-color, #333);
+  --md-paper: var(--bg-color, #fff);
+  --md-muted: #8a8f98;
+  --md-faint: #b4b8bf;
+  --md-rule: #e3e5e8;
+  --md-tint: #f3f4f6;
+  --md-accent: var(--primary-color, #3478f6);
+  --md-find: rgba(255, 197, 61, .45);
+  --md-find-current: rgba(255, 150, 0, .7);
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --md-muted: color-mix(in srgb, var(--md-ink) 58%, var(--md-paper));
+    --md-faint: color-mix(in srgb, var(--md-ink) 34%, var(--md-paper));
+    --md-rule: color-mix(in srgb, var(--md-ink) 14%, var(--md-paper));
+    --md-tint: color-mix(in srgb, var(--md-ink) 5%, var(--md-paper));
+  }
+}
+
+/* ============================ writing area ============================ */
+#write {
+  font-size: 1rem;
+  line-height: 1.75;
+  outline: none;
+  caret-color: var(--md-accent);
+}
+@supports (caret-color: -apple-system-control-accent) { #write { caret-color: -apple-system-control-accent; } }
+/* Side padding for themes that leave it to the editor; zero specificity so
+   a theme's own #write padding wins. */
+:where(#write) { padding-left: 32px; padding-right: 32px; }
+/* The document column scrolls under the title bar; leave room to read the
+   last lines in the middle of the window. */
+body #write { margin-left: auto; margin-right: auto; padding-top: 28px; padding-bottom: 32vh; min-height: 100%; }
+@media (max-width: 760px) { body #write { padding-left: 24px; padding-right: 24px; } }
+
+/* Document form controls and inline scripts behave consistently whatever the
+   theme; zero specificity so base.css and themes can position them. */
+:where(#write) :is(input, button, select, textarea) { font: inherit; color: inherit; margin: 0; }
+:where(#write) input[type="checkbox"] { box-sizing: border-box; padding: 0; line-height: normal; }
+:where(#write) :is(sub, sup) { position: relative; font-size: 75%; line-height: 0; vertical-align: baseline; }
+:where(#write) sup { top: -.5em; }
+:where(#write) sub { bottom: -.25em; }
+:where(#write) small { font-size: 80%; }
+:where(#write) img { border: 0; }
+
+/* The separator is retained as Markdown source, without occupying a row. */
+#write .md-sep-row { display: none; }
+#write .md-fences > .md-code-body {
+  display: block;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+/* No :empty, :nth-child or ~ rules on #write itself: with them WebKit
+   restyles every block whenever one is inserted or removed (35 ms at
+   5,000 blocks). The editor always keeps at least one block. */
+
+/* An empty document shows a quiet prompt; the pseudo-element is not text. */
+body.doc-empty #write > :first-child { position: relative; }
+body.doc-empty #write > :first-child::before {
+  content: var(--md-placeholder, "Start writing");
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--md-faint);
+  pointer-events: none;
+}
+
+/* incomplete syntax (still typing) shows its markers in a quiet tone */
+.md-tag { color: var(--md-faint); font-weight: normal; }
+.md-smart-editing > .md-smart-source { display: inline; }
+.md-smart-editing > .md-decor { display: none; }
+:is(h1, h2, h3, h4, h5, h6) .md-tag { opacity: .6; }
+.md-simple-empty > .md-tag, .md-simple-marker { display: none; }
+.md-simple-focus > .md-tag, .md-simple-focus > .md-simple-marker { display: inline; }
+blockquote.md-simple-empty { position: relative; min-height: 1.6em; }
+blockquote > .md-simple-marker { position: absolute; right: 100%; margin-right: .5em; color: var(--md-faint); white-space: pre; }
+.md-html-br { color: var(--md-faint); font: .8em var(--monospace); }
+body.hide-break-markers #write .md-html-br { display: none; }
+body.indent-first-line #write p { text-indent: 2em; }
+body.ignore-heading-breaks #write :is(h1, h2, h3, h4, h5, h6),
+body.ignore-heading-breaks #write :is(h1, h2, h3, h4, h5, h6) .md-plain { white-space: normal; }
+body.no-code-wrap #write pre.md-fences { overflow-x: auto; white-space: pre; }
+body.no-code-wrap #write pre.md-fences .md-code-body { white-space: pre; }
+
+/* ============================ embedded CodeMirror ============================ */
+/* Code and math editors grow with their content instead of scrolling. */
+#write .CodeMirror { height: auto; background: transparent; color: inherit; font-family: var(--monospace); }
+#write .CodeMirror-scroll { height: auto; overflow-x: auto !important; overflow-y: hidden !important; }
+#write .CodeMirror-gutters { background: transparent; border-right: 1px solid var(--md-rule); }
+#write .CodeMirror-linenumber { color: var(--md-faint); padding: 0 6px 0 4px; }
+#write .CodeMirror div.CodeMirror-cursor { border-left-color: currentColor; }
+#write .CodeMirror-activeline-background { background: transparent; }
+#write .CodeMirror-selected, #write .CodeMirror-focused .CodeMirror-selected { background: var(--select-text-bg-color, #b5d6fc); }
+/* Idle code and its editor share one inset, so the code does not shift when
+   it is clicked (themes adjust CodeMirror's own padding differently). */
+#write .md-fences .CodeMirror-lines { padding: 4px 0; }
+#write .md-fences .CodeMirror :is(pre.CodeMirror-line, pre.CodeMirror-line-like) { padding: 0 6px; }
+
+/* syntax colors for code at rest and while editing (light) */
+.cm-s-inner .cm-keyword, .cm-s-app-default .cm-keyword { color: #a2306f; }
+.cm-s-inner .cm-atom, .cm-s-inner .cm-number, .cm-s-app-default .cm-number { color: #1c6aa8; }
+.cm-s-inner .cm-def, .cm-s-inner .cm-variable-2 { color: #2f5bb7; }
+.cm-s-inner .cm-variable, .cm-s-inner .cm-property, .cm-s-inner .cm-operator { color: inherit; }
+.cm-s-inner .cm-variable-3, .cm-s-inner .cm-type, .cm-s-inner .cm-builtin { color: #7a4fb0; }
+.cm-s-inner .cm-string, .cm-s-inner .cm-string-2 { color: #2a7f3a; }
+.cm-s-inner .cm-comment, .cm-s-inner .cm-meta { color: #8a8f98; font-style: italic; }
+.cm-s-inner .cm-tag { color: #a2306f; }
+.cm-s-inner .cm-attribute, .cm-s-inner .cm-qualifier { color: #9a5b14; }
+.cm-s-inner .cm-bracket { color: inherit; }
+.cm-s-inner .cm-header { color: inherit; font-weight: 600; }
+.cm-s-inner .cm-link { color: var(--md-accent); }
+.cm-s-inner .cm-error { color: #d03a2b; }
+/* dark themes: same roles, lighter tones */
+body.ui-dark .cm-s-inner .cm-keyword { color: #f08fc0; }
+body.ui-dark .cm-s-inner :is(.cm-atom, .cm-number) { color: #79b8ff; }
+body.ui-dark .cm-s-inner :is(.cm-def, .cm-variable-2) { color: #8fb4ff; }
+body.ui-dark .cm-s-inner :is(.cm-variable-3, .cm-type, .cm-builtin) { color: #c5a5f5; }
+body.ui-dark .cm-s-inner :is(.cm-string, .cm-string-2) { color: #8fd18f; }
+body.ui-dark .cm-s-inner :is(.cm-comment, .cm-meta) { color: #8b949e; }
+body.ui-dark .cm-s-inner .cm-tag { color: #f08fc0; }
+body.ui-dark .cm-s-inner :is(.cm-attribute, .cm-qualifier) { color: #e3b56f; }
+body.ui-dark .cm-s-inner .cm-error { color: #ff8a80; }
+
+/* View captures omit editing controls and the blinking insertion point. */
+body.copying-image #md-content :is([contenteditable], input, textarea) { caret-color: transparent !important; }
+body.copying-image :is(.md-lang, .app-table-row-controls, .app-table-column-controls, .CodeMirror-cursors) { visibility: hidden !important; }
+
+/* ============================ source code view ============================ */
+/* visibility is driven by the inline z-index lift in toggleSource() and
+   the body.sourceview-on class */
+#app-source {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: var(--md-paper);
+  color: var(--md-ink);
+}
+body.sourceview-on #app-source { display: block; }
+/* hidden but still laid out, so returning to the document only lays out
+   the blocks edited in Source Code Mode */
+body.sourceview-on #write { visibility: hidden; }
+body.sourceview-on #md-content { overflow: hidden; }
+#app-source > .CodeMirror {
+  height: 100%;
+  font: calc(14px * var(--document-zoom, 1))/1.7 var(--ui-mono, ui-monospace, Menlo, monospace);
+  background: var(--md-paper);
+  color: inherit;
+}
+#app-source .CodeMirror-scroll { overflow: auto !important; }
+#app-source .CodeMirror-lines { max-width: 860px; margin: 0 auto; padding: 28px 40px 32vh; }
+#app-source .CodeMirror-gutters { display: none; background: transparent; border: 0; }
+#app-source .CodeMirror-sizer { margin-left: 0 !important; }
+#app-source .CodeMirror div.CodeMirror-cursor { border-left: 2px solid var(--md-accent); }
+#app-source .CodeMirror-activeline-background { background: var(--md-tint); border-radius: 4px; }
+#app-source .CodeMirror-selected, #app-source .CodeMirror-focused .CodeMirror-selected { background: var(--select-text-bg-color, Highlight); }
+#app-source .cm-header { color: inherit; font-weight: 700; }
+#app-source :is(.cm-formatting, .cm-formatting-header, .cm-formatting-list, .cm-formatting-quote, .cm-hr) { color: var(--md-faint); }
+#app-source :is(.cm-link, .cm-url) { color: var(--md-accent); }
+#app-source .cm-url { text-decoration: none; opacity: .8; }
+#app-source .cm-quote { color: var(--md-muted); font-style: italic; }
+#app-source .cm-comment { color: var(--md-muted); }
+#app-source :is(.cm-strong) { font-weight: 700; }
+#app-source :is(.cm-em) { font-style: italic; }
+#app-source :is(.cm-variable, .cm-variable-2, .cm-variable-3, .cm-operator, .cm-bracket, .cm-def, .cm-property, .cm-keyword, .cm-atom, .cm-number) { color: inherit; }
+#source-editor {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  padding: 28px 40px 32vh;
+  font: calc(14px * var(--document-zoom, 1))/1.7 var(--ui-mono, ui-monospace, Menlo, monospace);
+  background: inherit;
+  color: inherit;
+  tab-size: 4;
+}
+
+/* ============================ blocks ============================ */
+div[mdtype="hr"].md-hr {
+  height: 2px;
+  min-height: 2px;
+  margin: 1.5em 0;
+  padding: 0;
+  border: 0;
+  background-color: var(--md-rule);
+  cursor: pointer;
+}
+div[mdtype="hr"].md-hr:hover { background-color: var(--md-faint); }
+div[mdtype="hr"].md-hr:empty:after { content: ""; }
+.md-rawblock { color: var(--md-muted); white-space: pre-wrap; font-family: var(--monospace); font-size: .85rem; }
+
+/* Metadata has its own frame so entering it is distinct from body text. */
+#write .md-frontmatter {
+  margin: 0 0 1.25rem;
+  padding: 12px 16px;
+  border: 1px solid var(--md-rule);
+  border-radius: 8px;
+  background: var(--md-tint);
+  color: var(--md-ink);
+}
+#write:focus-within .md-frontmatter.md-current-block { border-color: var(--md-accent); }
+.md-frontmatter-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin-bottom: 8px;
+  color: var(--md-muted);
+  font: 12px/1.5 var(--ui-font, -apple-system, sans-serif);
+  white-space: normal;
+  user-select: none;
+  cursor: text;
+}
+.md-frontmatter-label { font-weight: 600; }
+.md-frontmatter > .md-plain {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: .875rem/1.6 var(--monospace);
+  tab-size: 4;
+}
+
+/* focus mode dims everything except the current block */
+body.on-focus-mode #write > *:not(.md-current-block) { opacity: .32; transition: opacity .2s; }
+body.on-focus-mode #write > .md-current-block { opacity: 1; }
+body.typewriter-mode #write { padding-top: 45vh; padding-bottom: 45vh; transition: none; }
+body.typewriter-mode #md-content { overflow-anchor: none; }
+
+body.collapse-soft-breaks #write p, body.collapse-soft-breaks #write p .md-plain { white-space: normal; }
+
+/* ============================ code fences ============================ */
+pre[mdtype="fences"] { position: relative; }
+/* the language field appears on hover or while the fence is focused */
+.md-lang { display: none; }
+pre:hover .md-lang, pre:focus-within .md-lang {
+  display: block;
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  font-size: .75em;
+  background: inherit;
+}
+pre .md-lang-input {
+  width: 9em;
+  padding: 2px 6px;
+  border: 1px solid var(--md-rule);
+  border-radius: 5px;
+  font: 12px var(--ui-font, -apple-system, sans-serif);
+  color: inherit;
+  z-index: 8;
+}
+pre .md-lang-input:focus { outline: 2px solid var(--md-accent); outline-offset: 0; }
+.md-fences.md-diagram-ready.mock-cm > .md-code-body { display: none !important; }
+/* A rendered diagram reads as a figure; its code frame returns while the
+   source is edited. */
+#write pre.md-fences.md-diagram-ready.mock-cm { background: transparent; border-color: transparent; box-shadow: none; }
+#write pre.md-fences.md-diagram-ready.mock-cm:hover { box-shadow: inset 0 0 0 1px var(--md-rule); border-radius: 6px; }
+.md-diagram svg { display: block; margin: auto; max-width: 100%; height: auto; }
+.md-diagram-error { white-space: pre-wrap; color: #c0392b; font: .8em/1.4 var(--ui-font, -apple-system, sans-serif); }
+body.ui-dark .md-diagram-error { color: #ff8a80; }
+
+/* ============================ tables ============================ */
+.md-table th, .md-table td { position: relative; }
+.app-table-row-controls, .app-table-column-controls {
+  display: none;
+  position: absolute;
+  z-index: 4;
+  padding: 2px;
+  white-space: nowrap;
+  background: var(--md-paper);
+  border: 1px solid var(--md-rule);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  font: 11px/1.4 var(--ui-font, -apple-system, sans-serif);
+}
+.app-table-row-controls { right: 100%; top: 0; margin-right: 4px; }
+.app-table-column-controls { bottom: 100%; left: 0; margin-bottom: 4px; }
+.md-table tr:hover > :first-child > .app-table-row-controls, .md-table th:hover > .app-table-column-controls, .md-table .md-decor:focus-within { display: inline-flex; }
+.md-table .md-decor button, .md-table .md-decor select { background: transparent; color: inherit; border: 0; border-radius: 4px; padding: 2px 5px; cursor: pointer; font: inherit; }
+.md-table .md-decor button:hover { background: var(--md-tint); }
+
+/* ============================ inline math & images ============================ */
+.md-inline-math.md-rendered .md-tex-src { display: none; }
+.md-inline-math .md-math-body { display: inline-block; }
+/* once loaded, only the image shows; on error, the full source returns */
+.md-image { white-space: nowrap; }
+.md-image.md-img-loaded .md-plain { display: none; }
+.md-image.md-img-error .md-attr { display: inline; }
+.md-image img.md-decor { max-width: 100%; vertical-align: middle; }
+.md-image.md-img-loaded { white-space: normal; display: inline-block; max-width: 100%; }
+.md-image.md-source-focus > .md-attr, .md-image.md-source-focus > .md-plain { display: inline; white-space: pre-wrap; }
+.md-image.md-source-focus > img.md-decor { display: none; }
+.md-image.md-img-error > .md-plain.md-decor { display: none; }
+.md-img-hint { display: none; font: 12px ui-sans-serif, sans-serif; color: var(--ui-muted, #888); margin-inline-start: 8px; }
+.md-img-error .md-img-hint { display: inline; }
+
+/* ============================ math blocks ============================ */
+/* Both delimiters belong to the source panel; the preview follows it. */
+.md-math-block { position: relative; cursor: default; }
+.md-math-block.md-focus { cursor: text; }
+.md-math-block.md-focus .md-math-body { display: none; }
+.md-math-block:not(.md-focus) > :is(.md-math-source, .md-mathjax-preview) { display: none; }
+.md-math-source {
+  background: var(--rawblock-edit-panel-bd, var(--md-tint));
+  font: 1em/1.6 var(--monospace);
+  white-space: pre-wrap;
+}
+.md-math-source > :is(.md-attr, .md-tag) {
+  display: inline;
+  padding-inline: 1ch;
+  color: var(--md-muted);
+  font-size: .8em;
+  font-weight: normal;
+}
+.md-math-source > .md-plain { display: inline; white-space: pre-wrap; }
+.ic-contain-cm .md-math-source > :is(.md-attr, .md-tag) { display: block; white-space: normal; }
+.md-mathblock-panel { margin: 0; padding: 0 .75rem; font-size: .9em; white-space: normal; }
+#write .md-mathblock-panel .CodeMirror {
+  min-height: 1.6em;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--rawblock-edit-panel-bd, var(--md-tint));
+  color: inherit;
+  font: inherit;
+}
+#write .md-mathblock-panel .CodeMirror-lines { padding: 0; }
+#write .md-mathblock-panel :is(pre.CodeMirror-line, pre.CodeMirror-line-like) { padding: 0; }
+.md-mathblock-panel .CodeMirror div.CodeMirror-cursor { border-left-color: currentColor; }
+.md-mathblock-panel .cm-s-inner :is(.cm-variable, .cm-variable-2, .cm-variable-3, .cm-operator, .cm-bracket) { color: inherit; }
+.md-mathblock-panel .cm-s-inner :is(.cm-tag, .cm-keyword, .cm-number, .cm-atom) { color: var(--md-accent); }
+.md-math-block.ic-contain-cm {
+  border-radius: 3px;
+  box-shadow: 0 1px 2px var(--md-rule);
+}
+.md-mathjax-preview {
+  margin: 0;
+  min-height: 4em;
+  padding: 1em;
+  border-top: 1px solid var(--md-rule);
+  background: var(--md-paper);
+  overflow-x: auto;
+}
+.md-mathjax-preview .katex-display { margin: 0; }
+.md-math-toolbar {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translateY(-100%);
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  background: var(--rawblock-edit-panel-bd, var(--md-tint));
+  color: var(--md-muted);
+  font: 12px/20px var(--ui-font, -apple-system, sans-serif);
+}
+.md-math-block.md-focus > .md-math-toolbar { display: flex; }
+.md-math-toolbar .md-math-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--md-ink);
+  cursor: pointer;
+}
+.md-math-done:hover { background: var(--md-rule); }
+.md-math-done:focus-visible { outline: 2px solid var(--md-accent); outline-offset: 1px; }
+/* until Enter creates a source newline, the caret stays beside the opener */
+.md-math-block.md-math-opener > .md-math-source { display: inline; padding: 0; background: transparent; font: inherit; }
+.md-math-block.md-math-opener .md-math-source > .md-tag { padding: 0; font-size: inherit; }
+.md-math-block.md-math-opener .md-plain,
+.md-math-block.md-math-opener > .md-math-toolbar,
+.md-math-block.md-math-opener > .md-math-body { display: none; }
+
+/* ============================ footnotes ============================ */
+/* Bracket markers are painted by pseudo-elements; the marker text stays in
+   hidden spans so the source walk still sees it. */
+.md-def-name {
+  position: relative;
+  display: inline-block;
+  padding-left: 2ch;
+  padding-right: 2.5ch;
+  font-weight: 700;
+  font-size: 1em;
+  text-align: center;
+}
+.md-def-name:before { content: "["; position: absolute; left: 0; font-weight: 400; color: var(--md-faint); }
+.md-def-footnote .md-def-name:before { content: "[^"; }
+.md-def-name:after { content: "] :"; position: absolute; right: 0; font-weight: 400; color: var(--md-faint); }
+.md-def-name:empty:after { content: "name   ]"; position: initial; }
+.md-def-marker { display: none; }
+.md-def-split { display: inline-block; min-width: 1ch; white-space: pre; }
+.md-def-content:empty { min-width: 10ch; display: inline-block; }
+.md-def-footnote .md-def-content:empty:after { content: "Footnote text"; color: var(--md-faint); }
+.footnotes { opacity: .85; font-size: .9rem; margin-top: 1em; margin-bottom: 1em; }
+.footnotes + .footnotes { margin-top: 0; }
+.footnotes-area { color: var(--md-muted); margin-top: .714rem; padding-bottom: .143rem; white-space: normal; }
+.md-reverse-footnote-area { white-space: normal; }
+.reversefootnote { color: inherit; font-family: var(--ui-mono, ui-monospace, Menlo, monospace); text-decoration: none; cursor: pointer; }
+/* references: raw "[^ref]" until defined, then a numbered superscript */
+sup.md-footnote { cursor: pointer; }
+.md-footnote .md-fn-marker { color: var(--md-faint); }
+.md-footnote .md-fn-num { display: none; }
+.md-footnote.md-has-num .md-fn-marker,
+.md-footnote.md-has-num > .md-text { display: none; }
+.md-footnote.md-has-num .md-fn-num { display: inline; }
+body.ui-dark sup.md-footnote { background-color: var(--md-tint); color: inherit; }
+/* the "define this footnote" hint for unresolved references */
+.md-fn-hint {
+  position: fixed;
+  z-index: 20000;
+  max-width: 340px;
+  padding: 6px 10px;
+  font: 12px/1.4 var(--ui-font, -apple-system, sans-serif);
+  color: var(--ui-ink, #333);
+  background: var(--ui-surface, #fff);
+  border: 1px solid var(--ui-line, rgba(0, 0, 0, .12));
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .14);
+}
+
+/* ============================ table of contents ============================ */
+.md-toc { min-height: 3.58rem; position: relative; font-size: .9rem; border-radius: 10px; }
+.md-toc-src { display: none; }
+.md-toc-content { position: relative; margin-left: 0; }
+.md-toc-item { display: block; color: var(--md-accent); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner { display: inline-block; cursor: pointer; font: inherit; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-h1 .md-toc-inner { margin-left: 0; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+.md-toc-h4 .md-toc-inner { margin-left: 5em; }
+.md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+.md-toc-h6 .md-toc-inner { margin-left: 8em; }
+/* hover label + delete button above the block */
+.md-toc > .md-toc-tooltip {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  right: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 20px;
+  font: 11px var(--ui-font, -apple-system, sans-serif);
+  color: var(--md-muted);
+}
+.md-toc:hover > .md-toc-tooltip,
+.md-toc.md-focus > .md-toc-tooltip { display: flex; }
+.md-toc .md-delete-toc { padding: 0 6px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.md-toc .md-delete-toc:hover { background: var(--md-tint); color: var(--md-ink); }
+
+/* ============================ find highlights ============================ */
+/* Matches are painted with the CSS Custom Highlight API; no DOM is added. */
+::highlight(lettrine-find) { background-color: var(--md-find); color: inherit; }
+::highlight(lettrine-find-current) { background-color: var(--md-find-current); color: inherit; }
+/* Source Code Mode marks matches with CodeMirror text markers instead. */
+.cm-find-hit { background-color: var(--md-find); border-radius: 2px; }
+.cm-find-current { background-color: var(--md-find-current); border-radius: 2px; }
+
+.md-blink, .blink-area { animation: md-blink 1.2s ease-out 1; }
+@keyframes md-blink { 0%, 30% { background-color: var(--md-find); } 100% { background-color: transparent; } }
+
+/* ============================ oversize ============================ */
+body.oversize #write { visibility: hidden; }
+body.oversize #app-source { visibility: hidden; }
+
+@media print {
+  body #write { padding-top: 0; padding-bottom: 0; }
+}
