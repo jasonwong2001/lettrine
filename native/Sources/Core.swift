@@ -62,6 +62,13 @@ final class FileService {
     private var versions: [String: String] = [:]
     private var indexes: [String: [JSON]] = [:]
     private var folderSources: [String: DispatchSourceFileSystemObject] = [:]
+    // Finder-launched apps can have a 256-descriptor soft limit. Each directory
+    // watch holds one open, so leave room for enumeration, documents and WebKit.
+    private let folderWatchLimit: Int = {
+        var limit = rlimit()
+        guard getrlimit(RLIMIT_NOFILE, &limit) == 0 else { return 64 }
+        return Int(min(512, limit.rlim_cur / 4))
+    }()
     private var refreshPending = Set<String>()
     private var poller: DispatchSourceTimer?
     private var past: [FileAction] = [], future: [FileAction] = []
@@ -116,7 +123,7 @@ final class FileService {
         }
     }
     func watch(_ folder: URL) {
-        guard folderSources[folder.path] == nil, folderSources.count < 512 else { return }
+        guard folderSources[folder.path] == nil, folderSources.count < folderWatchLimit else { return }
         let fd = open(folder.path, O_EVTONLY)
         guard fd >= 0 else { return }
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write, .rename, .delete], queue: queue)

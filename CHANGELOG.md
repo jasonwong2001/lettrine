@@ -22,4 +22,5 @@ The first public release.
 
 ### Fixed
 
+- Large libraries no longer exhaust file descriptors with directory watches and show populated folders as empty when launched from Finder.
 - Deleting an empty formula returns the caret to a paragraph without leaving the extra blank lines from formula completion. Undo restores the formula and its caret.

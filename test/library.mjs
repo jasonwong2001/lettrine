@@ -13,9 +13,11 @@ const library = path.join(dir, "Library"), profile = path.join(dir, "profile");
 await mkdir(library); await mkdir(profile);
 await writeFile(path.join(profile, "settings.json"), JSON.stringify({ autosave: false, restoreSession: false, welcomeShown: true, locale: "en", background: "light" }));
 // More than the old 5,000-entry cap, with enough text to exercise cancellation.
+// Empty asset folders also exceed a Finder-launched app's 256-descriptor limit.
 for (let group = 0; group < 26; group++) {
   const folder = path.join(library, `Group ${group}`);
   await mkdir(folder);
+  await Promise.all(Array.from({ length: 24 }, (_, index) => mkdir(path.join(folder, `Assets ${index}`))));
   await Promise.all(Array.from({ length: 200 }, (_, index) => writeFile(path.join(folder, `Paper ${group * 200 + index}.md`), "# Paper\n\n" + "Ordinary document text.\n".repeat(80))));
 }
 const anchor = path.join(dir, "anchor.md"), removed = path.join(library, "removed.md"), external = path.join(library, "external.md");
@@ -31,6 +33,7 @@ const steps = [
   { open: anchor },
   { eval: `${A}.openFolder(${q(library)})` },
   check("large libraries include documents beyond the old entry cap", `${A}.files.filter(file=>!file.isDirectory).length`, 5203),
+  check("directory watches do not truncate libraries under a 256-descriptor limit", `${A}.files.filter(file=>file.isDirectory).length`, 650),
   { eval: `window.__libraryTimes={};let start=performance.now();${A}.handleCommand('view.files');__libraryTimes.articlesMs=performance.now()-start` },
   check("Articles mounts a bounded window of rows", "document.querySelectorAll('#file-library-list [data-path]').length<80&&document.querySelector('#file-library-list [data-path]').getAttribute('aria-setsize')==='5203'"),
   { eval: "document.querySelector('#file-library-list [data-path]').focus()" },
@@ -85,7 +88,9 @@ const watcher = watch(dir, (_, name) => {
   if (name === path.basename(signal) && !externalChange) externalChange = rm(external).catch(error => { mutationError = error; });
 });
 const { executable, args } = await resolveRuntime(root, process.argv[2]);
-const child = spawn(executable, [...args, "--user-data-dir=" + profile, "--lettrine-harness", scenario, "--lettrine-out", dir], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+// Shell-launched apps often inherit a much higher limit than Finder launches.
+// Lower only the test child's limit so development runs catch descriptor leaks.
+const child = spawn("/bin/sh", ["-c", 'ulimit -n 256 || exit; exec "$@"', "lettrine-library-test", executable, ...args, "--user-data-dir=" + profile, "--lettrine-harness", scenario, "--lettrine-out", dir], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
 let log = ""; child.stdout.on("data", data => { log += data; }); child.stderr.on("data", data => { log += data; });
 const timeout = setTimeout(() => child.kill("SIGTERM"), 60000);
 const code = await new Promise((resolve, reject) => { child.once("exit", resolve); child.once("error", reject); });
